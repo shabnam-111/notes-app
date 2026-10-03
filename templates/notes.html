@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">My Notes</h2>
+  <span>Hi, {{ username }} · <a href="{{ url_for('logout') }}">Logout</a></span>
+</div>
+
+<div id="alert" class="alert alert-danger d-none"></div>
+
+<form id="note-form" class="card card-body mb-4">
+  <input id="title" class="form-control mb-2" placeholder="Title" required>
+  <textarea id="content" class="form-control mb-2" rows="3" placeholder="Write your note..."></textarea>
+  <div>
+    <button class="btn btn-primary" type="submit" id="save-btn">Add note</button>
+    <button class="btn btn-secondary d-none" type="button" id="cancel-btn">Cancel</button>
+  </div>
+</form>
+
+<div id="notes" class="row g-3"></div>
+
+<script>
+  const form = document.getElementById("note-form");
+  const titleEl = document.getElementById("title");
+  const contentEl = document.getElementById("content");
+  const saveBtn = document.getElementById("save-btn");
+  const cancelBtn = document.getElementById("cancel-btn");
+  const list = document.getElementById("notes");
+  const alertBox = document.getElementById("alert");
+  let editingId = null;
+
+  function showError(msg) {
+    alertBox.textContent = msg;
+    alertBox.classList.remove("d-none");
+    setTimeout(() => alertBox.classList.add("d-none"), 4000);
+  }
+
+  async function api(url, options = {}) {
+    const res = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
+    if (res.status === 401) { window.location.href = "/login"; return; }
+    const data = res.status === 204 ? null : await res.json();
+    if (!res.ok) throw new Error((data && data.error) || "Something went wrong");
+    return data;
+  }
+
+  function makeButton(text, cls, handler) {
+    const b = document.createElement("button");
+    b.className = "btn btn-sm " + cls;
+    b.textContent = text;
+    b.onclick = handler;
+    return b;
+  }
+
+  function card(note) {
+    const col = document.createElement("div");
+    col.className = "col-12 col-md-6 col-lg-4";
+    const box = document.createElement("div");
+    box.className = "card h-100";
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const h = document.createElement("h5");
+    h.textContent = note.title;
+    const p = document.createElement("p");
+    p.textContent = note.content;
+    p.style.whiteSpace = "pre-wrap";
+    body.append(h, p,
+      makeButton("Edit", "btn-outline-primary me-2", () => startEdit(note)),
+      makeButton("Delete", "btn-outline-danger", () => removeNote(note.id)));
+    box.appendChild(body);
+    col.appendChild(box);
+    return col;
+  }
+
+  async function loadNotes() {
+    try {
+      const notes = await api("/api/notes");
+      list.innerHTML = "";
+      if (!notes.length) {
+        list.innerHTML = '<p class="text-muted">No notes yet. Add your first one above.</p>';
+        return;
+      }
+      notes.forEach(n => list.appendChild(card(n)));
+    } catch (e) { showError(e.message); }
+  }
+
+  function startEdit(note) {
+    editingId = note.id;
+    titleEl.value = note.title;
+    contentEl.value = note.content;
+    saveBtn.textContent = "Update note";
+    cancelBtn.classList.remove("d-none");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetForm() {
+    editingId = null;
+    form.reset();
+    saveBtn.textContent = "Add note";
+    cancelBtn.classList.add("d-none");
+  }
+
+  async function removeNote(id) {
+    if (!confirm("Delete this note?")) return;
+    try { await api("/api/notes/" + id, { method: "DELETE" }); loadNotes(); }
+    catch (e) { showError(e.message); }
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = JSON.stringify({ title: titleEl.value, content: contentEl.value });
+    try {
+      if (editingId) await api("/api/notes/" + editingId, { method: "PUT", body });
+      else await api("/api/notes", { method: "POST", body });
+      resetForm();
+      loadNotes();
+    } catch (err) { showError(err.message); }
+  });
+
+  cancelBtn.addEventListener("click", resetForm);
+  loadNotes();
+</script>
+{% endblock %}
