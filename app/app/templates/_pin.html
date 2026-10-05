@@ -1,0 +1,14 @@
+{# pin / unpin toggle. Usage: {% from "_pin.html" import pin_button %}{{ pin_button(note, back='index', q=q) }} #}
+{% macro pin_button(note, back='index', q='') %}
+<form method="post" action="{{ url_for('web.toggle_pin', note_id=note.id) }}" class="inline">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+  <input type="hidden" name="back" value="{{ back }}">
+  <input type="hidden" name="q" value="{{ q }}">
+  <button class="icon-btn pin-btn" type="submit" aria-pressed="{{ 'true' if note.pinned else 'false' }}"
+          aria-label="{{ 'Unpin note' if note.pinned else 'Pin note' }}" title="{{ 'Unpin' if note.pinned else 'Pin to top' }}">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+      <path d="M9 3h6l-1 6 3 3v2h-4.2v6.2l-.8.8-.8-.8V14H7v-2l3-3-1-6z"/>
+    </svg>
+  </button>
+</form>
+{% endmacro %}
