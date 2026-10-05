@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit note' if note else 'New note' }} · Notes{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/quill/quill.snow.css') }}">{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>{{ 'Edit note' if note else 'New note' }}</h1>
+  <form method="post" id="note-form" data-csrf="{{ csrf_token() }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Title
+      <input name="title" value="{{ title }}" maxlength="120" required>
+      {% if errors.title %}<span class="field-err">{{ errors.title }}</span>{% endif %}
+    </label>
+
+    <div class="field-label" id="body-label">Note</div>
+    <div id="editor-wrap" class="editor-wrap">
+      <div id="toolbar" role="toolbar" aria-labelledby="body-label">
+        <span class="ql-formats">
+          <select class="ql-header" aria-label="Heading">
+            <option value="1">Heading 1</option><option value="2">Heading 2</option><option value="3">Heading 3</option>
+            <option selected>Normal</option>
+          </select>
+          <select class="ql-size" aria-label="Text size">
+            <option value="10px">10</option><option value="12px">12</option><option value="14px">14</option>
+            <option value="" selected>16</option><option value="18px">18</option><option value="24px">24</option>
+            <option value="32px">32</option><option value="48px">48</option>
+          </select>
+        </span>
+        <span class="ql-formats">
+          <button class="ql-bold" type="button"></button><button class="ql-italic" type="button"></button>
+          <button class="ql-underline" type="button"></button><button class="ql-strike" type="button"></button>
+        </span>
+        <span class="ql-formats">
+          <select class="ql-color" aria-label="Text colour"></select>
+          <select class="ql-background" aria-label="Highlight colour"></select>
+        </span>
+        <span class="ql-formats">
+          <button class="ql-list" value="bullet" type="button"></button><button class="ql-list" value="ordered" type="button"></button>
+          <select class="ql-align" aria-label="Alignment"></select>
+        </span>
+        <span class="ql-formats">
+          <button class="ql-link" type="button"></button>
+          <button class="ql-image" type="button" title="Insert image" aria-label="Insert image"></button>
+          <button class="ql-shape" type="button" title="Insert shape" aria-label="Insert shape" aria-expanded="false" aria-controls="shape-panel">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><rect class="ql-stroke" x="2" y="8" width="7" height="7" rx="1"/><circle class="ql-stroke" cx="12" cy="6" r="4"/></svg>
+          </button>
+          <button class="ql-clean" type="button" aria-label="Clear formatting"></button>
+        </span>
+      </div>
+
+      <div id="shape-panel" class="shape-panel" hidden>
+        <div class="shape-grid">
+          {% for s in shapes %}
+          <button type="button" class="shape-opt" data-shape="{{ s }}" title="{{ s|capitalize }}" aria-label="Insert {{ s }}">
+            <img src="/shapes/{{ s }}.svg?fill=2f5da8&stroke=5b6b7a" alt="" width="36" height="{{ 8 if s == 'line' else 36 }}">
+          </button>
+          {% endfor %}
+        </div>
+        <div class="shape-colors">
+          <label>Fill <input type="color" id="shape-fill" value="#2f5da8"></label>
+          <label>Outline <input type="color" id="shape-stroke" value="#5b6b7a"></label>
+          <label class="check"><input type="checkbox" id="shape-nofill"> No fill</label>
+        </div>
+      </div>
+
+      <div id="image-tools" class="image-tools" role="toolbar" aria-label="Image size" hidden>
+        <button type="button" data-width="25%">S</button><button type="button" data-width="50%">M</button>
+        <button type="button" data-width="75%">L</button><button type="button" data-width="100%">Full</button>
+        <button type="button" data-action="delete" class="danger">Remove</button>
+      </div>
+
+      <div id="editor">{{ body|clean }}</div>
+    </div>
+    <p id="editor-status" class="field-err" role="alert"></p>
+    {% if errors.body %}<span class="field-err">{{ errors.body }}</span>{% endif %}
+    <input type="hidden" name="body" id="body-input">
+    <input type="file" id="image-input" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+
+    <label class="check"><input type="checkbox" name="pinned" {{ 'checked' if pinned }}> Pin this note to the top</label>
+    <div class="row">
+      <button class="btn" type="submit">Save note</button>
+      <a class="btn ghost" href="{{ url_for('web.index') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/quill/quill.js') }}"></script>
+<script src="{{ url_for('static', filename='editor.js') }}"></script>
+{% endblock %}

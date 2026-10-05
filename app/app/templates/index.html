@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_pin.html" import pin_button with context %}
+{% macro card(n) %}
+<li class="note{{ ' pinned' if n.pinned }}">
+  {% if n|thumb %}<a href="{{ url_for('web.view_note', note_id=n.id) }}" tabindex="-1" aria-hidden="true"><img class="thumb" src="{{ n|thumb }}" alt="" loading="lazy"></a>{% endif %}
+  <h2><a href="{{ url_for('web.view_note', note_id=n.id) }}">{{ n.title }}</a></h2>
+  <p>{{ n|excerpt }}</p>
+  <footer>
+    <time datetime="{{ n.updated_at.isoformat() }}">{{ n.updated_at.strftime('%d %b %Y, %H:%M') }}</time>
+    <span class="actions">
+      {{ pin_button(n, 'index', q) }}
+      <a href="{{ url_for('web.edit_note', note_id=n.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('web.delete_note', note_id=n.id) }}" class="inline">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="link danger" type="submit">Delete</button>
+      </form>
+    </span>
+  </footer>
+</li>
+{% endmacro %}
+{% block content %}
+<div class="toolbar">
+  <form method="get" role="search" class="search">
+    <input name="q" value="{{ q }}" placeholder="Search notes" aria-label="Search notes">
+    <button class="btn ghost" type="submit">Search</button>
+  </form>
+  <a class="btn" href="{{ url_for('web.new_note') }}">New note</a>
+</div>
+{% if pinned or others %}
+  {% if pinned %}
+  <h2 class="section">Pinned</h2>
+  <ul class="notes">{% for n in pinned %}{{ card(n) }}{% endfor %}</ul>
+  {% endif %}
+  {% if others %}
+  {% if pinned %}<h2 class="section">Others</h2>{% endif %}
+  <ul class="notes">{% for n in others %}{{ card(n) }}{% endfor %}</ul>
+  {% endif %}
+{% else %}
+<section class="empty">
+  {% if q %}<p>No notes match “{{ q }}”.</p>{% else %}<p>Nothing written yet.</p>
+  <a class="btn" href="{{ url_for('web.new_note') }}">Write your first note</a>{% endif %}
+</section>
+{% endif %}
+{% endblock %}
