@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_pin.html" import pin_button with context %}
+{% block title %}{{ note.title }} · Notes{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/quill/quill.snow.css') }}">{% endblock %}
+{% block content %}
+<article class="panel">
+  <header class="view-head">
+    <div>
+      <h1>{{ note.title }}</h1>
+      <p class="muted"><time datetime="{{ note.updated_at.isoformat() }}">Edited {{ note.updated_at.strftime('%d %b %Y, %H:%M') }}</time>{% if note.pinned %} · Pinned{% endif %}</p>
+    </div>
+    <div class="actions">
+      {{ pin_button(note, 'view') }}
+      <a class="btn" href="{{ url_for('web.edit_note', note_id=note.id) }}">Edit</a>
+    </div>
+  </header>
+  <div class="ql-snow"><div class="ql-editor rich-view">{{ note|rich }}</div></div>
+  <p><a href="{{ url_for('web.index') }}">← All notes</a></p>
+</article>
+{% endblock %}

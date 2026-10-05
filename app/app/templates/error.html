@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }} · Notes{% endblock %}
+{% block content %}
+<section class="panel narrow">
+  <h1>{{ code }}</h1>
+  <p>{{ message }}</p>
+  <a class="btn" href="{{ url_for('web.index') }}">Back to your notes</a>
+</section>
+{% endblock %}
