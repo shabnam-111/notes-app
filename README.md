@@ -1,4 +1,4 @@
-# Notes App - Version B
+# Notes App
 
 A simple Notes application built with Flask and SQLite for the DevOps & Automation Lab (ENSP461) capstone project.
 
