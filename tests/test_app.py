@@ -51,3 +51,9 @@ def test_title_is_required(client):
     res = client.post("/api/notes", json={"title": "", "content": "x"})
     assert res.status_code == 400
     
+
+
+
+def test_register_short_password(client):
+    res = client.post("/register", data={"username": "abc", "password": "123"})
+    assert b"password 6+" in res.data
