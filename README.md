@@ -1,90 +1,181 @@
-# Notes App
+# AI_NOTES_APP
 
-A Notes application built with Flask and PostgreSQL (SQLite for quick local runs) for the DevOps & Automation Lab
-(ENSP461) capstone project. The DevOps phases (Docker, Jenkins, Kubernetes, ...) are added in later pull requests;
-see `docs/` as they land.
+MindVault is an enterprise-grade, privacy-first personal knowledge management (PKM) platform engineered with clean architecture, high-precision retrieval-augmented generation (RAG), asynchronous document intelligence, and a distraction-free Notion/Obsidian-inspired workspace.
 
-## Features
+See [DEMO.md](DEMO.md) for the Docker, Jenkins, and Kubernetes walkthrough.
 
-- User registration and login (hashed passwords, CSRF-protected forms)
-- Create, read, update, delete, search and **pin** notes
-- **Rich-text editor**: text size, colour, highlight, headings, lists, alignment, links, **images** and **shapes**
-- REST API with token (JWT) authentication
-- Responsive web interface with automatic dark mode
-- Error handling: friendly pages in the browser, JSON errors from the API
-- Operations endpoints: `/health`, `/metrics` (Prometheus) and JSON logs on stdout
+---
 
-More detail and the security model: [docs/FEATURES.md](docs/FEATURES.md).
+## 1. System Architecture
 
-## Run locally (SQLite, no setup)
+```
+                    ┌───────────────────────────────────────────────┐
+                    │     Frontend: Next.js 14 + TipTap + Zustand   │
+                    │   (Dark Charcoal, Warm Surfaces, Purple UI)   │
+                    └───────────────────────┬───────────────────────┘
+                                            │ HTTP / REST
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │     Backend API: Node.js / Express / TS       │
+                    │   - JWT Auth & User Scoping Isolation         │
+                    │   - Notes, Folders & Tags CRUD                │
+                    │   - Multer Document Upload Validator          │
+                    │   - Redis Task Dispatcher & Background Jobs   │
+                    └───────────────┬───────────────────────────────┘
+                                    │
+           ┌────────────────────────┴────────────────────────┐
+           ▼                                                 ▼
+┌───────────────────────────┐                     ┌───────────────────────────┐
+│       PostgreSQL 16       │                     │    Python 3.11 FastAPI    │
+│  - Relational Schema      │                     │  - PDF/DOCX/OCR Pipeline  │
+│  - Multi-tenant records   │                     │  - Recursive Chunker      │
+│  - Optimistic concurrency │                     │  - SentenceTransformers   │
+│  - Prisma Migrations      │                     │  - RAG Citation Generator │
+└───────────────────────────┘                     │  - AI Auto-Tagger Engine  │
+                                                  └─────────────┬─────────────┘
+                                                                │
+                                                                ▼
+                                                  ┌───────────────────────────┐
+                                                  │       Qdrant Vector DB    │
+                                                  │  - 384-dim / 768-dim      │
+                                                  │  - user_id Payload Filter │
+                                                  │  - Cosine Hybrid Search   │
+                                                  └───────────────────────────┘
+```
 
+---
+
+## 2. Core Features (Implemented)
+
+### FEATURE 1: Rich Text Notes Editor
+- Built with extensible **TipTap** (H1–H3, Bold, Italic, Underline, Strikethrough, Bullet/Numbered Lists, Checklists/Task Lists, Blockquotes, Syntax-highlighted Code Blocks, Tables, Hyperlinks).
+- **Debounced Autosave (700ms)** with visual state indicators (`Saved`, `Saving...`, `Unsaved changes`, `Edit conflict`).
+- **Optimistic Concurrency Control**: Tracks integer version increments; prevents silent overwriting during concurrent tabs or updates.
+- Folder hierarchies, tag management, favorite/pin toggle, and archive/restore lifecycle.
+- Dirty navigation warnings (`beforeunload`) to prevent accidental data loss.
+
+### FEATURE 2: AI-Powered Semantic Search
+- Converts natural language queries into dense vector embeddings using `all-MiniLM-L6-v2` (or Google Gemini / OpenAI embeddings).
+- High-speed vector similarity queries executed against **Qdrant** with strict `user_id` payload isolation.
+- Displays relevance match percentages, source type badges (`Note` vs `Document`), and contextual highlighted excerpts.
+- Filters by source type, folder, or tag with real-time debounced search.
+
+### FEATURE 3: RAG-Based AI Chat With Notes
+- Dedicated conversational workspace grounded exclusively on the user's indexed notes and document chunks.
+- Multi-turn conversation history tracking.
+- **Verifiable Citations**: Every answer provides clickable source cards displaying the exact source title, source type, page number, match score, and expandable excerpt.
+- Strict anti-hallucination prompt guard: Never invents nonexistent notes and explicitly clarifies if the knowledge base lacks information on the requested topic.
+
+### FEATURE 4: Automatic AI Tagging and Categorization
+- Analyzes note title and body asynchronously or on-demand.
+- Identifies main subject, suggests appropriate category (e.g. `DevOps`, `Architecture`, `AI/ML`), and generates concise tags.
+- Re-uses existing user tags where appropriate to maintain a clean ontology without duplicate synonyms.
+- Extracts key technical entities and suggests related notes already existing in the vault.
+- **User Agency**: 1-click interface to accept all, accept selected, or modify suggestions.
+
+### FEATURE 5: PDF and Document Intelligence
+- Secure multi-format upload validator supporting **PDF**, **DOCX**, **TXT**, and **Markdown** (up to 25MB).
+- Text extraction preserving page numbers, structure, and tables.
+- OCR fallback capability via `pytesseract` for scanned or image-based PDF pages.
+- Recursive semantic chunking (~800 characters with 150-character boundary overlap).
+- Background worker status tracking (`uploaded` ➔ `processing` ➔ `indexed` ➔ `failed`).
+- Delete capability removes physical files, database chunks, and vector points from Qdrant.
+
+---
+
+## 3. Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| **Frontend** | Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, TipTap, Zustand, Lucide Icons |
+| **Backend API** | Node.js, Express.js, TypeScript, Prisma ORM, Multer, Bcrypt, JWT, Zod |
+| **AI Microservice** | Python 3.11, FastAPI, Pydantic, Qdrant Client, SentenceTransformers, PyPDF, pdfplumber, python-docx, pytesseract |
+| **Databases** | PostgreSQL 16 (Relational DB), Qdrant (Vector DB), Redis 7 (Cache & Queues) |
+| **DevOps & Infra** | Docker, Docker Compose, GitHub Actions CI/CD |
+
+---
+
+## 4. Quick Start Guide
+
+### Prerequisites
+- [Docker & Docker Compose](https://www.docker.com/) (Recommended)
+- Or Node.js 20+ and Python 3.11+ for bare-metal setup.
+
+### Option A: Run via Docker Compose (Recommended)
+
+1. Clone and navigate to the project directory:
+   ```bash
+   cd c:\Gurnoor_project
+   ```
+
+2. Copy the environment configuration:
+   ```bash
+   cp .env.example .env
+   ```
+   *(Optional: Add your `GEMINI_API_KEY` or `OPENAI_API_KEY` into `.env` to enable cloud LLM models. If left blank, MindVault runs with local SentenceTransformers embeddings and zero external API dependencies).*
+
+3. Start all services:
+   ```bash
+   docker compose up --build
+   ```
+
+4. Access the services:
+   - **Frontend Workspace**: `http://localhost:3000`
+   - **Backend REST API**: `http://localhost:4000/api/v1`
+   - **AI Microservice**: `http://localhost:8000/docs`
+   - **Qdrant Vector Dashboard**: `http://localhost:6333/dashboard`
+
+---
+
+### Option B: Local Bare-Metal Development
+
+#### 1. Backend Service
 ```bash
-cd app
-python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
+cd backend
+npm install
+npx prisma generate
+npx prisma db push
+npm run prisma:seed   # Seeds demo account demo@mindvault.ai / Password123!
+npm run dev
+```
+
+#### 2. Python AI Service
+```bash
+cd ai-service
 pip install -r requirements.txt
-flask --app wsgi run --port 5000
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Open <http://localhost:5000>, create an account and write a note. Data is stored in `app/instance/notes.db`, which is git-ignored.
-
-## Run against PostgreSQL
-
+#### 3. Frontend Web Client
 ```bash
-export DATABASE_URL=postgresql+psycopg2://notes:password@localhost:5432/notes
-export SECRET_KEY=$(python -c "import secrets;print(secrets.token_hex(32))")
-export JWT_SECRET=$(python -c "import secrets;print(secrets.token_hex(32))")
-flask --app wsgi run --port 5000
+cd frontend
+npm install
+npm run dev
 ```
 
-When `DATABASE_URL` is set the app **refuses to start without `SECRET_KEY` and `JWT_SECRET`** - there is no insecure default.
+---
 
-## Run tests
+## 5. Default Demo Credentials
 
+You can sign in immediately using the pre-seeded account:
+- **Email**: `demo@mindvault.ai`
+- **Password**: `Password123!`
+*(Or click the "Fill Demo Account Credentials" shortcut directly on the login screen).*
+
+---
+
+## 6. Running Tests
+
+### Backend Unit & Isolation Tests (Vitest)
 ```bash
-cd app
-pip install -r requirements-dev.txt
-flake8 .
-pytest --cov=app
-TEST_DATABASE_URL=postgresql+psycopg2://notes:password@localhost/notes_test pytest   # same suite on PostgreSQL
+cd backend
+npm test
 ```
+*Validates JWT authentication, password hashing, note CRUD, optimistic locking concurrency, and cross-user data isolation.*
 
-## API
-
-Log in once to get a token, then send it as `Authorization: Bearer <token>`.
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | /api/register | Create an account (`username`, `password`) |
-| POST | /api/login | Returns a token (valid 1 hour) |
-| GET | /api/notes | List my notes (`?q=` search, `?pinned=true`) |
-| POST | /api/notes | Create a note (`title`, `body`, `body_format`, `pinned`) |
-| GET | /api/notes/<id> | Get one note |
-| PUT | /api/notes/<id> | Update a note (any of the fields above) |
-| DELETE | /api/notes/<id> | Delete a note |
-| GET | /health | Health check (also checks the database) |
-| GET | /metrics | Prometheus metrics |
-
-## Configuration
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `DATABASE_URL` | local SQLite file | SQLAlchemy URL of the database |
-| `SECRET_KEY` | dev value, local only | Signs browser sessions |
-| `JWT_SECRET` | dev value, local only | Signs API tokens |
-| `LOG_LEVEL` | `INFO` | Log verbosity |
-
-## Layout
-
+### AI Service Tests (Pytest)
+```bash
+cd ai-service
+python -m pytest tests -v
 ```
-app/app/        Flask application (models, routes, sanitiser, editor assets)
-app/tests/      pytest suite
-app/wsgi.py     entry point (gunicorn wsgi:app / flask --app wsgi run)
-docs/           documentation
-```
-
-## Changes from the first prototype
-
-The first version (`app.py`, SQLite only, session-cookie API, 6-character passwords) was rebuilt on SQLAlchemy.
-Behaviour that changed on purpose: the API now uses bearer tokens instead of the browser session; passwords need
-8 characters; forms carry CSRF tokens; `/logout` is a POST. Every behaviour covered by the old tests (health check,
-login required, wrong password, CRUD flow, title required, short password) is covered by the new suite.
+*Validates semantic chunking, token counts, deterministic vector generation, cross-tenant vector isolation, and citation assembly.*

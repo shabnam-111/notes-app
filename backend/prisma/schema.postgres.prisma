@@ -1,0 +1,174 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String         @map("password_hash")
+  fullName      String         @map("full_name")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  folders       Folder[]
+  notes         Note[]
+  tags          Tag[]
+  documents     Document[]
+  chatSessions  ChatSession[]
+  aiJobs        AiJob[]
+
+  @@map("users")
+}
+
+model Folder {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  parentId  String?   @map("parent_id")
+  name      String
+  color     String    @default("#8B5CF6")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Folder?   @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Folder[]  @relation("FolderHierarchy")
+  notes     Note[]
+
+  @@index([userId, parentId])
+  @@map("folders")
+}
+
+model Note {
+  id           String     @id @default(uuid())
+  userId       String     @map("user_id")
+  folderId     String?    @map("folder_id")
+  title        String     @default("Untitled Note")
+  contentJson  Json?      @map("content_json")
+  contentText  String     @default("") @map("content_text")
+  isPinned     Boolean    @default(false) @map("is_pinned")
+  isArchived   Boolean    @default(false) @map("is_archived")
+  version      Int        @default(1)
+  lastEditedAt DateTime   @default(now()) @map("last_edited_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder       Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tags         NoteTag[]
+
+  @@index([userId, isArchived])
+  @@index([userId, isPinned])
+  @@index([userId, folderId])
+  @@map("notes")
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  name      String
+  color     String    @default("#A78BFA")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes     NoteTag[]
+
+  @@unique([userId, name])
+  @@map("tags")
+}
+
+model NoteTag {
+  noteId String @map("note_id")
+  tagId  String @map("tag_id")
+
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@map("note_tags")
+}
+
+model Document {
+  id           String          @id @default(uuid())
+  userId       String          @map("user_id")
+  title        String
+  filename     String
+  filePath     String          @map("file_path")
+  fileType     String          @map("file_type") // pdf, docx, txt, md
+  fileSize     Int             @map("file_size") // bytes
+  status       String          @default("uploaded") @map("status") // uploaded, processing, indexed, failed
+  errorMessage String?         @map("error_message")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks       DocumentChunk[]
+
+  @@index([userId, status])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id             String    @id @default(uuid())
+  documentId     String    @map("document_id")
+  chunkIndex     Int       @map("chunk_index")
+  content        String
+  tokenCount     Int       @map("token_count")
+  pageNumber     Int?      @map("page_number")
+  qdrantPointId  String    @map("qdrant_point_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  document       Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, chunkIndex])
+  @@map("document_chunks")
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  userId    String        @map("user_id")
+  title     String        @default("New Conversation")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String      @map("session_id")
+  role      String      // user, assistant, system
+  content   String
+  citations Json?       // [{ sourceId, title, type, pageNumber, excerpt, score }]
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
+}
+
+model AiJob {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  jobType      String    @map("job_type") // note_indexing, doc_processing, auto_tagging
+  targetId     String    @map("target_id")
+  status       String    @default("pending") // pending, running, completed, failed
+  result       Json?
+  errorMessage String?   @map("error_message")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("ai_jobs")
+}

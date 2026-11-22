@@ -1,0 +1,67 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "redis"
+  },
+  "spec": {
+    "replicas": 1,
+    "strategy": {
+      "type": "Recreate"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "redis"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "redis"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "volumes": [
+          {
+            "name": "data",
+            "persistentVolumeClaim": {
+              "claimName": "redis"
+            }
+          }
+        ],
+        "containers": [
+          {
+            "name": "redis",
+            "image": "redis:7-alpine",
+            "ports": [
+              {
+                "containerPort": 6379
+              }
+            ],
+            "args": [
+              "redis-server",
+              "--appendonly",
+              "yes"
+            ],
+            "volumeMounts": [
+              {
+                "name": "data",
+                "mountPath": "/data"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "redis-cli",
+                  "ping"
+                ]
+              }
+            }
+          }
+        ],
+        "enableServiceLinks": false
+      }
+    }
+  }
+}
