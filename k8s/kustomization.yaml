@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: mindvault
+resources:
+  - postgres-service.json
+  - postgres-deployment.json
+  - postgres-persistentvolumeclaim.json
+  - redis-service.json
+  - redis-deployment.json
+  - redis-persistentvolumeclaim.json
+  - qdrant-service.json
+  - qdrant-deployment.json
+  - qdrant-persistentvolumeclaim.json
+  - ai-service-service.json
+  - ai-service-deployment.json
+  - backend-service.json
+  - backend-deployment.json
+  - backend-persistentvolumeclaim.json
+  - frontend-service.json
+  - frontend-deployment.json

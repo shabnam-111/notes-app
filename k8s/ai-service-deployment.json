@@ -1,0 +1,105 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "ai-service"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "ai-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "ai-service"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "name": "ai-service",
+            "image": "mindvault-ai-service:demo",
+            "ports": [
+              {
+                "containerPort": 8000
+              }
+            ],
+            "env": [
+              {
+                "name": "QDRANT_HOST",
+                "value": "qdrant"
+              },
+              {
+                "name": "GEMINI_API_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "mindvault-secrets",
+                    "optional": true,
+                    "key": "GEMINI_API_KEY"
+                  }
+                }
+              },
+              {
+                "name": "OPENAI_API_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "mindvault-secrets",
+                    "optional": true,
+                    "key": "OPENAI_API_KEY"
+                  }
+                }
+              },
+              {
+                "name": "LLM_PROVIDER",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "mindvault-secrets",
+                    "optional": true,
+                    "key": "LLM_PROVIDER"
+                  }
+                }
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/health",
+                "port": 8000
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/app/uploads",
+                "readOnly": true,
+                "name": "uploads"
+              }
+            ]
+          }
+        ],
+        "enableServiceLinks": false,
+        "volumes": [
+          {
+            "persistentVolumeClaim": {
+              "claimName": "backend"
+            },
+            "name": "uploads"
+          }
+        ],
+        "initContainers": [
+          {
+            "command": [
+              "python",
+              "-c",
+              "import urllib.request; urllib.request.urlopen('http://qdrant:6333/readyz', timeout=5).close()"
+            ],
+            "image": "mindvault-ai-service:demo",
+            "name": "wait-for-qdrant"
+          }
+        ]
+      }
+    }
+  }
+}

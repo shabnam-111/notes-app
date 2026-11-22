@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #121316;
+  --bg-surface: #1a1b20;
+  --bg-card: #1e1f25;
+  --border-color: #2e3039;
+  --accent-purple: #8b5cf6;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2e3039;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* TipTap Editor Styling */
+.tiptap {
+  outline: none;
+  min-height: 400px;
+}
+
+.tiptap p {
+  margin-bottom: 0.85em;
+  line-height: 1.7;
+  color: #e5e7eb;
+}
+
+.tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #f9fafb;
+}
+
+.tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.3em;
+  margin-bottom: 0.4em;
+  color: #f3f4f6;
+}
+
+.tiptap h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.1em;
+  margin-bottom: 0.3em;
+  color: #e5e7eb;
+}
+
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.85em;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.85em;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid #8b5cf6;
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-bottom: 1em;
+  color: #d1d5db;
+  font-style: italic;
+  background: rgba(139, 92, 246, 0.05);
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.tiptap pre {
+  background: #0d0e11;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #2e3039;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.tiptap code {
+  background: #24252d;
+  color: #c4b5fd;
+  font-family: monospace;
+  font-size: 0.9em;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.tiptap pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.tiptap table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid #2e3039;
+}
+
+.tiptap th, .tiptap td {
+  border: 1px solid #2e3039;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+
+.tiptap th {
+  background: #1e1f25;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.tiptap td {
+  background: #16171c;
+}
+
+/* Checklists / Task lists */
+ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.4rem;
+}
+
+ul[data-type="taskList"] li > label {
+  margin-right: 0.5rem;
+  user-select: none;
+  cursor: pointer;
+}
+
+ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}

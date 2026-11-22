@@ -1,0 +1,126 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "backend"
+  },
+  "spec": {
+    "replicas": 1,
+    "strategy": {
+      "type": "Recreate"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "backend"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "backend"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "volumes": [
+          {
+            "name": "data",
+            "persistentVolumeClaim": {
+              "claimName": "backend"
+            }
+          }
+        ],
+        "initContainers": [
+          {
+            "name": "database-init",
+            "image": "mindvault-database-init:demo",
+            "env": [
+              {
+                "name": "DATABASE_URL",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "mindvault-secrets",
+                    "optional": false,
+                    "key": "DATABASE_URL"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "name": "backend",
+            "image": "mindvault-backend:demo",
+            "ports": [
+              {
+                "containerPort": 4000
+              }
+            ],
+            "env": [
+              {
+                "name": "CORS_ALLOWED_ORIGINS",
+                "value": "http://localhost:3200,http://127.0.0.1:3200,http://localhost:13100,http://127.0.0.1:13100"
+              },
+              {
+                "name": "REDIS_URL",
+                "value": "redis://redis:6379"
+              },
+              {
+                "name": "AI_SERVICE_URL",
+                "value": "http://ai-service:8000"
+              },
+              {
+                "name": "UPLOAD_DIR",
+                "value": "/app/uploads"
+              },
+              {
+                "name": "DATABASE_URL",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "mindvault-secrets",
+                    "optional": false,
+                    "key": "DATABASE_URL"
+                  }
+                }
+              },
+              {
+                "name": "JWT_SECRET",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "mindvault-secrets",
+                    "optional": false,
+                    "key": "JWT_SECRET"
+                  }
+                }
+              },
+              {
+                "name": "JWT_REFRESH_SECRET",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "mindvault-secrets",
+                    "optional": false,
+                    "key": "JWT_REFRESH_SECRET"
+                  }
+                }
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "data",
+                "mountPath": "/app/uploads"
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/api/v1/health",
+                "port": 4000
+              }
+            }
+          }
+        ],
+        "enableServiceLinks": false
+      }
+    }
+  }
+}
