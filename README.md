@@ -1,6 +1,6 @@
 # AI_NOTES_APP
 
-MindVault is an enterprise-grade, privacy-first personal knowledge management (PKM) platform engineered with clean architecture, high-precision retrieval-augmented generation (RAG), asynchronous document intelligence, and a distraction-free Notion/Obsidian-inspired workspace.
+MindVault is an enterprise-grade, privacy-first personal knowledge management (PKM) platform engineered with clean architecture, high-precision retrieval-augmented generation (RAG), asynchronous document indexing, and strict user-level data isolation.
 
 See [DEMO.md](DEMO.md) for the Docker, Jenkins, and Kubernetes walkthrough.
 
@@ -23,8 +23,8 @@ See [DEMO.md](DEMO.md) for the Docker, Jenkins, and Kubernetes walkthrough.
                     │   - Redis Task Dispatcher & Background Jobs   │
                     └───────────────┬───────────────────────────────┘
                                     │
-           ┌────────────────────────┴────────────────────────┐
-           ▼                                                 ▼
+            ┌────────────────────────┴────────────────────────┐
+            ▼                                                 ▼
 ┌───────────────────────────┐                     ┌───────────────────────────┐
 │       PostgreSQL 16       │                     │    Python 3.11 FastAPI    │
 │  - Relational Schema      │                     │  - PDF/DOCX/OCR Pipeline  │
@@ -32,15 +32,15 @@ See [DEMO.md](DEMO.md) for the Docker, Jenkins, and Kubernetes walkthrough.
 │  - Optimistic concurrency │                     │  - SentenceTransformers   │
 │  - Prisma Migrations      │                     │  - RAG Citation Generator │
 └───────────────────────────┘                     │  - AI Auto-Tagger Engine  │
-                                                  └─────────────┬─────────────┘
-                                                                │
-                                                                ▼
-                                                  ┌───────────────────────────┐
-                                                  │       Qdrant Vector DB    │
-                                                  │  - 384-dim / 768-dim      │
-                                                  │  - user_id Payload Filter │
-                                                  │  - Cosine Hybrid Search   │
-                                                  └───────────────────────────┘
+                                                   └─────────────┬─────────────┘
+                                                                 │
+                                                                 ▼
+                                                   ┌───────────────────────────┐
+                                                   │       Qdrant Vector DB    │
+                                                   │  - 384-dim / 768-dim      │
+                                                   │  - user_id Payload Filter │
+                                                   │  - Cosine Hybrid Search   │
+                                                   └───────────────────────────┘
 ```
 
 ---
@@ -103,16 +103,17 @@ See [DEMO.md](DEMO.md) for the Docker, Jenkins, and Kubernetes walkthrough.
 
 ### Option A: Run via Docker Compose (Recommended)
 
-1. Clone and navigate to the project directory:
+1. Clone the repository and navigate into the project directory:
    ```bash
-   cd c:\Gurnoor_project
+   git clone https://github.com/shabnam-111/notes-app.git
+   cd notes-app
    ```
 
 2. Copy the environment configuration:
    ```bash
    cp .env.example .env
    ```
-   *(Optional: Add your `GEMINI_API_KEY` or `OPENAI_API_KEY` into `.env` to enable cloud LLM models. If left blank, MindVault runs with local SentenceTransformers embeddings and zero external API dependencies).*
+   *(Optional: Add your `GEMINI_API_KEY` or `OPENAI_API_KEY` into `.env` to enable cloud LLM models. If left blank, MindVault runs with local SentenceTransformers embeddings and zero external API calls.)*
 
 3. Start all services:
    ```bash
